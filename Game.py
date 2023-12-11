@@ -15,20 +15,32 @@ D. 智慧（人数最少时，每人+2分）
 E. 勇气（若仅有你一人选择此项，+4分）
 '''
 
-'''
-有10人进行博弈，当你是其中之一，你要尽力取得高分，你会如何选择？
-A. 谨慎（+1）
-B. 公正（与选此选项的玩家平分3分）
-C. 团结（选此选项的玩家最多时，每人+2分）
-D. 智慧（选此选项的玩家最少时，每人+2分）
-E. 勇气（若仅有你一人选择此项，+4分）
-
-显然，这是群体间的激烈博弈，使这道题没有标准答案。但答案并不重要，重要的是，人们会如何选择？
-'''
 from Strategy import normal
 
-
 class StrategyParameters:
+    """
+    表示游戏策略的参数。
+
+    参数：
+        config_file (str)：配置文件的路径。
+
+    属性：
+        NUM_PLAYERS (int)：游戏中的玩家数量。
+        NUM_OPTIONS (int)：游戏中的选项数量。
+        NUM_EPOCHS (int)：游戏中的循环次数。
+        is_communicate (bool)：指示游戏中是否允许通信。
+        pList (list)：初始概率列表。
+        LEARN_RATE_UP (float)：增加概率的学习率。
+        LEARN_RATE_DOWN (float)：减少概率的学习率。
+        WIS_VALUE (float)：智慧策略的值。
+        SOLID_VALUE (float)：团结策略的值。
+        show (int)：展示次数。
+        avg_score (list)：平均得分列表。
+        iter (int)：迭代次数。
+        ans_list (list)：答案列表。
+        crowds_ans (list)：群体答案列表。
+        score_list (list)：每个玩家的得分列表。
+    """
     def __init__(self, config_file):
         config = configparser.ConfigParser()
         config.read(config_file)
@@ -130,38 +142,39 @@ class Game:
         self.params = StrategyParameters(config_file)
 
     def main(self):
-        """
-        游戏主循环。
-        """
-        while True:  # 游戏主循环
-            for i in range(self.NUM_EPOCHS):  # 游戏循环次数
-                self.init_single_game()
-                for norm in range(self.NUM_PLAYERS):
-                    self.normal_scheme["one"] = np.random.choice(self.NUM_OPTIONS, p = self.pList)  # 初始策略
-                    ans = self.normal_scheme["one"]
-                    self.ans_list[ans] += 1
-                    self.crowds_ans.append(ans)
-                self.OTraw(self.ans_list, self.score_list)
-                
-                if i % (self.NUM_EPOCHS // 100) == 0:
-                    self.show += 1
-                    self.pOption0.append(self.pList[0])
-                    self.pOption1.append(self.pList[1])
-                    self.pOption2.append(self.pList[2])
-                    self.pOption3.append(self.pList[3])
-                    self.pOption4.append(self.pList[4])
-                    self.pOption = [self.pOption0, self.pOption1, self.pOption2, self.pOption3, self.pOption4]
-                    self.avg_score.append(np.mean(self.score_list))
-                    print(i)
+            """
+            游戏主循环。
+            """
+            while True:  # 游戏主循环
+                for i in range(self.NUM_EPOCHS):  # 游戏循环次数
+                    self.init_single_game()  # 初始化单个游戏的参数
+                    for norm in range(self.NUM_PLAYERS):
+                        self.normal_scheme["one"] = np.random.choice(self.NUM_OPTIONS, p=self.pList)  # 随机选择初始策略
+                        ans = self.normal_scheme["one"]
+                        self.ans_list[ans] += 1  # 更新每个选项选择的玩家数量
+                        self.crowds_ans.append(ans)  # 添加玩家答案到列表中
+                    self.OTraw(self.ans_list, self.score_list)  # 根据玩家答案计算每个玩家的得分
+                    
+                    if i % (self.NUM_EPOCHS // 100) == 0:
+                        self.show += 1
+                        # 记录每个选项的概率
+                        self.pOption0.append(self.pList[0])
+                        self.pOption1.append(self.pList[1])
+                        self.pOption2.append(self.pList[2])
+                        self.pOption3.append(self.pList[3])
+                        self.pOption4.append(self.pList[4])
+                        self.pOption = [self.pOption0, self.pOption1, self.pOption2, self.pOption3, self.pOption4]
+                        self.avg_score.append(np.mean(self.score_list))  # 计算平均得分
+                        print(i)
 
-                # 更新参数
-                self.params.pList = self.pList
-                self.params.iter = i
-                self.params.ans_list = self.ans_list
-                self.params.crowds_ans = self.crowds_ans
-                self.params.score_list = self.score_list
-                self.pList = normal.norm_scheme_adjust(self.params)
-            break
+                    # 更新参数
+                    self.params.pList = self.pList
+                    self.params.iter = i
+                    self.params.ans_list = self.ans_list
+                    self.params.crowds_ans = self.crowds_ans
+                    self.params.score_list = self.score_list
+                    self.pList = normal.norm_scheme_adjust(self.params)  # 调整策略概率
+                break
     
     def init_single_game(self):
         """
@@ -185,31 +198,32 @@ class Game:
         self.fairness_score = 0
         self.wisdom_score = 0
         self.bravery_score = 0
+
         for anst in ans_list:  # 判断是否满足“团结”和“智慧”的条件
             if ans_list[2] >= anst:
                 self.count_que1 += 1
             if ans_list[3] <= anst:
                 self.count_que2 += 1
+
         if self.count_que1 == len(ans_list):
             self.fairness_score = 2
         if self.count_que2 == len(ans_list):
             self.wisdom_score = 2
         if ans_list[4] == 1:
             self.bravery_score = 4
+
         count = 0
         for i in self.crowds_ans:
-            if i == 0:
+            if i == 0:                                      # 谨慎
                 score_list[count] = 1
-            elif i == 1:
-                if ans_list == 0:
-                    pass
-                else:
+            elif i == 1:                                    # 公平
+                if ans_list != 0:
                     score_list[count] = 3 / ans_list[1]
-            elif i == 2:
+            elif i == 2:                                    # 团结
                 score_list[count] = self.fairness_score
-            elif i == 3:
+            elif i == 3:                                    # 智慧
                 score_list[count] = self.wisdom_score
-            elif i == 4:
+            elif i == 4:                                    # 勇气
                 score_list[count] = self.bravery_score
             count += 1
 
