@@ -51,6 +51,13 @@ class StrategyParameters:
         self.NUM_EPOCHS = config.getint('Game', 'NUM_EPOCHS')
         self.is_communicate = config.getboolean('Game', 'is_communicate')
 
+        # 设定策略参数
+        self.cautious_score = 1
+        self.fairness_score = 3
+        self.solidarity_score = 2
+        self.wisdom_score = 2
+        self.bravery_score = 4
+
         # 读取初始概率
         self.pList = list(map(float, config.get('InitialProbabilities', 'pList').split(',')))
 
@@ -81,6 +88,11 @@ class Game:
         - NUM_OPTIONS：选项数量
         - NUM_EPOCHS：游戏循环次数
         - is_communicate：是否允许玩家之间进行通信
+        - cautious_score：“谨慎”选项得分
+        - fairness_score：“公平”选项所平分的分值
+        - solidarity_score：“团结”选项可能的得分
+        - wisdom_score：“智慧”选项可能的得分
+        - bravery_score：“勇气”选项可能的得分
         - player_types：玩家类型字典
         - pList：初始概率列表
         - LEARN_RATE_UP：策略学习率（增加）
@@ -105,6 +117,13 @@ class Game:
         self.NUM_OPTIONS = config.getint('Game', 'NUM_OPTIONS')
         self.NUM_EPOCHS = config.getint('Game', 'NUM_EPOCHS')
         self.is_communicate = config.getboolean('Game', 'is_communicate')
+
+        # 设定策略参数
+        self.cautious_score = 1
+        self.fairness_score = 3
+        self.solidarity_score = 2
+        self.wisdom_score = 2
+        self.bravery_score = 4
 
         # 读取玩家类型
         self.player_types = {
@@ -153,7 +172,7 @@ class Game:
                         ans = self.normal_scheme["one"]
                         self.ans_list[ans] += 1  # 更新每个选项选择的玩家数量
                         self.crowds_ans.append(ans)  # 添加玩家答案到列表中
-                    self.OTraw(self.ans_list, self.score_list)  # 根据玩家答案计算每个玩家的得分
+                    self.calc_scores(self.ans_list, self.score_list)  # 根据玩家答案计算每个玩家的得分
                     
                     if i % (self.NUM_EPOCHS // 100) == 0:
                         self.show += 1
@@ -185,7 +204,7 @@ class Game:
         self.crowds_ans= []  # 玩家答案列表
         self.score_list = [0] * self.NUM_PLAYERS  # 玩家得分列表
 
-    def OTraw(self, ans_list, score_list):
+    def calc_scores(self, ans_list, score_list):
         """
         根据玩家答案计算每个玩家的得分。
 
@@ -193,39 +212,24 @@ class Game:
         - ans_list：每个选项选择的玩家数量列表
         - score_list：玩家得分列表
         """
-        self.count_que1 = 0
-        self.count_que2 = 0
-        self.fairness_score = 0
-        self.wisdom_score = 0
-        self.bravery_score = 0
+        count_que1 = ans_list[2] >= max(ans_list)
+        count_que2 = ans_list[3] <= min(ans_list)
 
-        for anst in ans_list:  # 判断是否满足“团结”和“智慧”的条件
-            if ans_list[2] >= anst:
-                self.count_que1 += 1
-            if ans_list[3] <= anst:
-                self.count_que2 += 1
+        self.solidarity_score = 0 if not count_que1 else self.solidarity_score
+        self.wisdom_score = 0 if not count_que2 else self.wisdom_score
+        self.bravery_score = 0 if ans_list[4] != 1 else self.bravery_score
 
-        if self.count_que1 == len(ans_list):
-            self.fairness_score = 2
-        if self.count_que2 == len(ans_list):
-            self.wisdom_score = 2
-        if ans_list[4] == 1:
-            self.bravery_score = 4
-
-        count = 0
-        for i in self.crowds_ans:
-            if i == 0:                                      # 谨慎
-                score_list[count] = 1
-            elif i == 1:                                    # 公平
-                if ans_list != 0:
-                    score_list[count] = 3 / ans_list[1]
-            elif i == 2:                                    # 团结
-                score_list[count] = self.fairness_score
-            elif i == 3:                                    # 智慧
-                score_list[count] = self.wisdom_score
-            elif i == 4:                                    # 勇气
-                score_list[count] = self.bravery_score
-            count += 1
+        for i, ans in enumerate(self.crowds_ans):
+            if ans == 0:  # 谨慎
+                score_list[i] = self.cautious_score
+            elif ans == 1:  # 公平
+                score_list[i] = self.fairness_score / ans_list[1] if ans_list[1] != 0 else 0
+            elif ans == 2:  # 团结
+                score_list[i] = self.solidarity_score
+            elif ans == 3:  # 智慧
+                score_list[i] = self.wisdom_score
+            elif ans == 4:  # 勇气
+                score_list[i] = self.bravery_score
 
     def graph(self):
         """
