@@ -5,6 +5,7 @@
 
 print("加载游戏模块...")
 import numpy as np
+import math
 np.random.seed(3407)
 import tqdm
 import matplotlib.pyplot as plt
@@ -88,20 +89,22 @@ class Parameters:
 
                 if folder_name[1:] == '1':
                     # 读取得分参数
-                    self.cautious_score = q_config.getint('Q1', 'cautious_score')
-                    self.fairness_score = q_config.getint('Q1', 'fairness_score')
-                    self.solidarity_score = q_config.getint('Q1', 'solidarity_score')
-                    self.wisdom_score = q_config.getint('Q1', 'wisdom_score')
-                    self.bravery_score = q_config.getint('Q1', 'bravery_score')
+                    self.cautious_score = self._get_and_validate(q_config, 'Q1', 'cautious_score', int)
+                    self.fairness_score = self._get_and_validate(q_config, 'Q1', 'fairness_score', int)
+                    self.solidarity_score = self._get_and_validate(q_config, 'Q1', 'solidarity_score', int)
+                    self.wisdom_score = self._get_and_validate(q_config, 'Q1', 'wisdom_score', int)
+                    self.bravery_score = self._get_and_validate(q_config, 'Q1', 'bravery_score', int)
 
                     # 读取初始概率
-                    self.pList = list(map(float, s_config.get('InitialProbabilities', 'pList').split(',')))
+                    self.pList = self._get_and_validate(s_config, 'InitialProbabilities', 'pList', 
+                                                        lambda x: list(map(float, x.split(','))), 
+                                                        lambda x: len(x) == self.NUM_OPTIONS and math.isclose(sum(x), 1, rel_tol=1e-5))
 
                     # 读取策略超参数
-                    self.LEARN_RATE_UP = s_config.getfloat('Strategy', 'LEARN_RATE_UP')
-                    self.LEARN_RATE_DOWN = s_config.getfloat('Strategy', 'LEARN_RATE_DOWN')
-                    self.WIS_VALUE = s_config.getfloat('Strategy', 'WIS_VALUE')
-                    self.SOLID_VALUE = s_config.getfloat('Strategy', 'SOLID_VALUE')
+                    self.LEARN_RATE_UP = self._get_and_validate(s_config, 'Strategy', 'LEARN_RATE_UP', float, lambda x: x > 1)
+                    self.LEARN_RATE_DOWN = self._get_and_validate(s_config, 'Strategy', 'LEARN_RATE_DOWN', float, lambda x: x > 1)
+                    self.WIS_VALUE = self._get_and_validate(s_config, 'Strategy', 'WIS_VALUE', float, lambda x: x > 0)
+                    self.SOLID_VALUE = self._get_and_validate(s_config, 'Strategy', 'SOLID_VALUE', float, lambda x: x > 0)
                 # elif folder_name[1:] == '2':
                 #     pass
                 # elif folder_name[1:] == '3':
@@ -118,6 +121,7 @@ class Parameters:
         if validation_func and not validation_func(value):
             if option == 'NUM_PLAYERS':
                 raise ValueError(f"咱们还是先考虑10人局吧，以后会扩展的QAQ")
+            
             elif option == 'NUM_OPTIONS':
                 if value > 5:
                     raise ValueError(f"你怎么知道第一题其实不止五个选项的，以后再加吧QAQ")
@@ -125,20 +129,48 @@ class Parameters:
                     raise ValueError(f"我好心写了五个选项，你怎么可以不用QAQ")
                 if value < 0:
                     raise ValueError(f"负数选项？？？你认真的吗QAQ")
+                
             elif option == 'NUM_EPOCHS':
                 time = round(SCORE * value)
                 if value < 0:
                     raise ValueError(f"循环负数次？？你很有做测试工程师的潜力QAQ")
                 if 10 < time < 3600:
-                    warnings.warn(f"你想让我循环这么多次吗, 预计需要{time}秒QAQ")
+                    warnings.warn(f"你想让我循环这么多次吗, 预计需要 {time} 秒QAQ")
                     if input("确定要进行游戏吗？按回车键继续...") == 'q':
                         exit()
                         #raise ValueError(f"你取消了游戏QAQ")
+                if time >= 3600:
+                    raise ValueError(f"模拟时间预计超过一个小时，还是让电脑歇歇吧QAQ")
+                
+            elif option == 'cautious_score':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'fairness_score':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'solidarity_score':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'wisdom_score':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'bravery_score':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'pList':
+                if len(value) != self.NUM_OPTIONS:
+                    raise ValueError(f"初始概率列表 {value} 的长度不是 {self.NUM_OPTIONS}")
+                if not math.isclose(sum(value), 1, rel_tol=1e-5):
+                    raise ValueError(f"初始概率列表 {value} 的和不是1")
+                
+            elif option == 'LEARN_RATE_UP':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'LEARN_RATE_DOWN':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'WIS_VALUE':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            elif option == 'SOLID_VALUE':
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
+            
             else:
-                raise ValueError(f"{section} 中的 {option} 的值 {value} 是无效的")
+                raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
 
         return value
-    
 
 class Game:
     def __init__(self, config_file):
@@ -237,6 +269,8 @@ class Game:
         self.params.ans_list = [0] * self.params.NUM_OPTIONS  # 每个选项选择的玩家数量
         self.params.crowds_ans= []  # 玩家答案列表
         self.params.score_list = [0] * self.params.NUM_PLAYERS  # 玩家得分列表
+        [i / sum(self.params.pList) for i in self.params.pList] # 归一化概率
+
 
     def calc_scores(self, ans_list, score_list):
         """
