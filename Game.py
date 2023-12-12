@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+# Game.py
 # Python 3.8.10
 # @Time: 2023/12/11
 # @Author: Friman
@@ -137,6 +138,7 @@ class Parameters:
                 if 10 < time < 3600:
                     warnings.warn(f"你想让我循环这么多次吗, 预计需要 {time} 秒QAQ")
                     if input("确定要进行游戏吗？按回车键继续...") == 'q':
+                        print("再见~")
                         exit()
                         #raise ValueError(f"你取消了游戏QAQ")
                 if time >= 3600:
@@ -253,11 +255,7 @@ class Game:
                         #print(i)
 
                     # 更新参数
-                    self.params.pList = self.params.pList
                     self.params.iter = i
-                    self.params.ans_list = self.params.ans_list
-                    self.params.crowds_ans = self.params.crowds_ans
-                    self.params.score_list = self.params.score_list
                     self.params.pList = normal.norm_scheme_adjust(self.params, 1)  # 调整策略概率
                 break
     
@@ -283,21 +281,25 @@ class Game:
         count_que1 = ans_list[2] >= max(ans_list)
         count_que2 = ans_list[3] <= min(ans_list)
 
-        self.params.solidarity_score = 0 if not count_que1 else self.params.solidarity_score
-        self.params.wisdom_score = 0 if not count_que2 else self.params.wisdom_score
-        self.params.bravery_score = 0 if ans_list[4] != 1 else self.params.bravery_score
+        # 计算本轮游戏应得分数
+        self.cautious_score = self.params.cautious_score
+        self.fairness_score = self.params.fairness_score / ans_list[1] if ans_list[1] != 0 else 0
+        self.solidarity_score = 0 if not count_que1 else self.params.solidarity_score
+        self.wisdom_score = 0 if not count_que2 else self.params.wisdom_score
+        self.bravery_score = 0 if ans_list[4] != 1 else self.params.bravery_score
 
+        # 计算每个玩家的得分
         for i, ans in enumerate(self.params.crowds_ans):
             if ans == 0:  # 谨慎
-                score_list[i] = self.params.cautious_score
+                score_list[i] = self.cautious_score
             elif ans == 1:  # 公平
-                score_list[i] = self.params.fairness_score / ans_list[1] if ans_list[1] != 0 else 0
+                score_list[i] = self.fairness_score
             elif ans == 2:  # 团结
-                score_list[i] = self.params.solidarity_score
+                score_list[i] = self.solidarity_score
             elif ans == 3:  # 智慧
-                score_list[i] = self.params.wisdom_score
+                score_list[i] = self.wisdom_score
             elif ans == 4:  # 勇气
-                score_list[i] = self.params.bravery_score
+                score_list[i] = self.bravery_score
 
     def graph(self):
         """
@@ -318,7 +320,7 @@ def benchmark_brief(iter):
     用于性能跑分
     """
     import time
-    test_array = np.random.randint(0, 100000, iter*1900)
+    test_array = np.random.randint(0, 100000, iter*2000)
     start = time.time()
     test_array.sort()
     end = time.time()
@@ -345,7 +347,7 @@ def benchmark_brief_debug():
 
     for i in tqdm.trange(2000, 2010):
         start = time.time()
-        test_array = np.random.randint(0, 100000, i*1900)
+        test_array = np.random.randint(0, 100000, i*2000)
         test_array.sort()
         end = time.time()
         test_time.append(end-start)
