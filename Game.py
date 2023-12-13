@@ -26,6 +26,7 @@ E. 勇气（若仅有你一人选择此项，+4分）
 '''
 
 from strategies import normal
+from _p5af37c import wtf
 
 class Parameters:
     """
@@ -57,6 +58,8 @@ class Parameters:
             config.read(config_file)
         except Exception as e:
             raise Exception(f"找不到游戏配置文件: {e}")
+        
+        wtf(config_file)
 
         # 读取游戏参数
         self.NUM_PLAYERS = self._get_and_validate(config, 'Game', 'NUM_PLAYERS', int, lambda x: x == 10)
@@ -173,7 +176,7 @@ class Parameters:
                 raise ValueError(f"不要再输入奇怪的值啦，{section} 中 {option} 的值 {value} 是无效的QAQ")
 
         return value
-
+    
 class Game:
     def __init__(self, config_file):
         """

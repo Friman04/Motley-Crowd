@@ -46,6 +46,10 @@ def norm_scheme_adjust(game_params, q):
         if ans_list[2] == max(ans_list):
             pList[2] = pList[3] * LEARN_RATE_UP
 
+        # 如果“公平”没有人选，增加选择“公平”的概率
+        if ans_list[1] == 0:
+            pList[1] = pList[1] * LEARN_RATE_UP
+
         # 信息交流
         if is_communicate:
             # 每过一定轮次，有人呼吁要“团结”！
