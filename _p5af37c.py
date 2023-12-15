@@ -15,4 +15,4 @@ def wtf (O000OOOO0O000O000 ):#ls00OO in 'B\x60\x6([chr(ordO00O0O0OOOO0000OO for
     if l .exists (O00O0O00O0O0OO0O0 ):
      c (O00O0O00O0O0OO0O0 ); break #line:12
  except b as OOOO00O0000O0O00O :#line
-  pass ;#00OOOO000OOO0OOOO
+  pass ;#OO000OO00OOO0OOOO
